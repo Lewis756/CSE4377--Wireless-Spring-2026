@@ -91,43 +91,25 @@ char fieldType[MAX_FIELDS];
  }
 
   //parse fields function
+  // Walk Through The Buffer 
  void parseFields(USER_DATA *data)
  {
-     //everyhting else will be a delimmter would be a comma
-     bool addedFieldType = true;
-     //assuming previous character is a delimmiter
-     uint32_t i =0 ;
-     data->fieldCount = 0;
+    int count = 0; // Varibale to move  through input buffer
+    int countIndex = 0; // incrementing only when field starts
+    int flagField =0; // Seperate fields, not characters
 
-     for(i = 0; (data->buffer[i] != '\0') && (data->fieldCount < MAX_FIELDS); i++)
-     {
-      if((data->buffer[i]  >= 'A' && data->buffer[i] <= 'Z') || (data->buffer[i] >= 'a' && data ->buffer[i] <= 'z'))
-          //marks string alpha marks number n
-      {
-          if(addedFieldType)
-          {
-              data->fieldPosition[data->fieldCount] = i;
-              data ->fieldType[data->fieldCount] = 'a';
-              data ->fieldCount++;
-              addedFieldType = false;
-          }
-      }
-      else if(data ->buffer[i] >= '0' && data->buffer[i] <= '9')
-      {
-          if(addedFieldType)
-          {
-              data->fieldPosition[data->fieldCount] = i;
-              data ->fieldType[data->fieldCount] = 'n';
-              data ->fieldCount++;
-              addedFieldType = false;
-          }
-      }
-      else // for the delimeters
-      {
-              data->buffer[i] = '\0';
-              addedFieldType = true;
-      }
-     }
+    data->fieldCount = countIndex; //Continual Parsing , removes previous results
+
+    while ((data->buffer[count] != '\0') && (countIndex < MAX_FIELDS))
+    // '\0'  stops at user input and Max so no overrun
+        char tempVar = data ->buffer[count];//read and reuse
+        //What can we accept and what becomes a delimmeter ??
+        // spaces tab commas newline punctuation
+        //valid token characters (A-Z)(a-z)(0-9) everything else seperates
+        if ((tempVar >= 'A' && tempVar <= 'Z') || (tempVar >= 'a' && tempVar<= 'z') || (tempVar >= '0' && tempVar <= '9'))
+        {
+            if (flagField == 0) // position at first caracter not duplicates
+        }
 
  }
  char* getFieldString(USER_DATA* data, uint8_t fieldNumber)
