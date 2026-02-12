@@ -31,12 +31,33 @@ void setPhase(uint32_t fout)
 //    TODO: WRITE ISR INIT, DOUBLE CHECK NCO LOGIC,
 //    SIN/COS LUT, WRITE ENUM FOR "MODE"
 //***************************************************//
+uint32_t phaseSine = 0;
+uint32_t phaseCosine = 0;
 
 void ISR() //pseudocode for frequency/NCO
-{
-    delta_phase += phase;
-    theta = (delta_phase >> 22); //use first 10 bits
-    sin_val_i = LUT_sin[theta]; //LUT for sin
+{ //delatphase fixed point angleli
+   delta_phase += phase; //2^32delathase/2^20 to get 12 bits
+   //Phase how much angle moves each smaple
+   //deltaphase current angle
+    phaseSine = (delta_phase >> 20);// 12 bits 2^12 4096 matches sample
+    //phase space 0-2^32-1
+    //0-360degree represented
+    //360 degree = 2^32
+    //cosine 90 degree offset 90= 1/4 of the way through unit circle
+    //90 = (1/4)*(2^32)/4 = 2^32/2^2 = 2^30 =1073741824
+    phaseCosine = ((delta_phase + 1073741824 ) >> 20); //adds the offset and keeps 12 bits msb only
+    phaseSine = ((delta_phase >> 20));
+    rawI = sine_values[phaseCosine];
+    rawQ = sine_values[phaseSine];
+
+    writeDacAB(rawI,2000);
+    //m,sb impoartant 1^12
+    //2^12 4096 entries
+   // theta = (delta_phase >> 22); //use first 10 bits
+    // now channel A rawI cosine
+    //channel B rawQ sine
+
+  //  sin_val_i = LUT_sin[theta]; //LUT for sin
     //send the above value to the DAC
 }
 
