@@ -39,13 +39,33 @@ void setPhase(uint32_t fout)
 {
     phase = (uint32_t)((float)fout/FS  * 4294967296); //phase is a function of the desired wave freq/sampling freq * 2^32
 }
+void ldac_on()
+{
+    setPinValue(PORTF, 1, 1);
+}
 
+void ldac_off()
+{
+    setPinValue(PORTF, 1, 0);
+}
 //***************************************************//
 //    TODO: WRITE ISR INIT, DOUBLE CHECK NCO LOGIC,
 //    SIN/COS LUT, WRITE ENUM FOR "MODE"
 //***************************************************//
 uint32_t phaseSine = 0;
 uint32_t phaseCosine = 0;
+void writeDacAB(uint16_t rawI, uint16_t rawQ)
+{
+    //preserve 16 bit and and cleaer to write to correct channel
+    uint16_t spitransferA = ((rawI & 0x0FFF) | 0x3000); //configured to A
+    uint16_t spitransferB = ((rawQ & 0x0fff) | 0xB000); //configured to B
+    // send to both now
+    writeSpi1Data(spitransferA);
+    writeSpi1Data(spitransferB);
+    //latch them
+    ldac_off();
+    ldac_on();
+}
 
 void ISR() //pseudocode for frequency/NCO
 { //delatphase fixed point angleli
@@ -120,15 +140,6 @@ void sine_values() //table
 // 4095 = -0.5V
 //DAC A = i channel
 //DAC B = q channel
-void ldac_on()
-{
-    setPinValue(PORTF, 1, 1);
-}
-
-void ldac_off()
-{
-    setPinValue(PORTF, 1, 0);
-}
 //0.5 to dac?
 //o
 // mcp dac accepts 12 bit (0-4095)
@@ -146,7 +157,8 @@ float mvToV(int16_t millivolts)
 //random table to fill allray that holds data bytes
 void fillDataBytes(void)// 8 bit data bytes for transmission
 {
-   for(uint8_t i = 0; i < NUM_BYTES; i++)// 8 bits is a byte
+    uint16_t  i;
+   for( i = 0; i < NUM_BYTES; i++)// 8 bits is a byte
    {
        dataBytes[i] =(uint8_t) rand() ; //keeps in range because type cast
    }
@@ -184,6 +196,7 @@ void sendDacQ(float v)
 // when dac gets code the op amp, the outputvoltage is measured
 //when type a voltage compute the dac code
 // write to BOTH at the same time ! Raw?
+/*
 void writeDacAB(uint16_t rawI, uint16_t rawQ)
 {
     //preserve 16 bit and and cleaer to write to correct channel
@@ -195,8 +208,8 @@ void writeDacAB(uint16_t rawI, uint16_t rawQ)
     //latch them
     ldac_off();
     ldac_on();
-
 }
+*/
 void shell(void)
 {
     USER_DATA data;
