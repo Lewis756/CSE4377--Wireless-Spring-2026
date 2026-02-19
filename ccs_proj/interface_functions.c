@@ -17,6 +17,7 @@ int stringToInt(char *str);
 extern void putcUart0(char c);
 extern void putsUart0(char *str);
 extern char getcUart0();
+// uint32_t delta_phase;
 
 typedef struct _USER_DATA
 {

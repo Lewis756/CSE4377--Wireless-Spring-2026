@@ -12,6 +12,10 @@
 #include "shell_interface.h"
 #include "wireless.h"
 
+extern uint32_t delta_phase;
+extern uint16_t bpskSymbol;
+extern ReadConstellation;
+
 void shell(void)
 {
     USER_DATA data;
@@ -135,12 +139,14 @@ void shell(void)
             putsUart0("\r\n DISPLAYING BPSK \r\n");
 
         }
+        uint32_t sendWord = 0;
         if (isCommand(&data, "SEND", 2 ))
         {
             valid = true;
             char* modulation = getFieldString(&data, 1); // qpsk or bpsk etc
             char* hexStr = getFieldString(&data, 2); //example FFFFFFFF\
-            uint32_t sendWord = 0;
+           // uint32_t sendWord = 0;
+
             if(!HexToU32(hexStr, &sendWord))
             {
                 putsUart0("\r\n Invaluid hex format up to 8 \r\n");
@@ -170,7 +176,7 @@ void shell(void)
                 putsUart0("\r\nEPSK word Loaded \r\n");
 
             }
-            else if(StringCmpr(modulation,"qam"))
+            else if(Stringcmpr(modulation,"qam"))
             {
                 numberTransmitted(4,sendWord);
                 mode = qam;

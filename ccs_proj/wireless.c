@@ -20,6 +20,7 @@ uint16_t SymbolStored = 0; //isr index
 uint16_t SymbolCount = 0;
 uint8_t mode = 0;
 uint16_t ReadConstellation = 0;
+uint16_t bpskSymbol = 0;
 
 #define DAC_ZERO_OFFSET 2125 //2125 dac value for  zero volts
 #define I_GAIN 1960
@@ -72,7 +73,7 @@ void writeDacAB(uint16_t rawI, uint16_t rawQ)
 void ISR() //pseudocode for frequency/NCO
 { //delatphase fixed point angle
 
-   // uint8_t itteration = 0;
+    uint8_t itteration = 0;
     switch (mode)
     {
     case (sine): //sincos
@@ -138,7 +139,7 @@ void ISR() //pseudocode for frequency/NCO
        // rawQ =
 
          writeDacAB(rawI, rawQ);
-        ReadConstellaiton++;
+        ReadConstellation++;
         break;
     }
     case (qam):
@@ -165,10 +166,10 @@ void ISR() //pseudocode for frequency/NCO
 //uint16_t rawQ = 2125; //0v
 //float dcI = 0.0f;
 //float dcQ = 0.0f;
-extern uint16_t rawI;
-extern uint16_t rawQ;
-extern float dcI;
-extern float dcQ;
+ uint16_t rawI;
+ uint16_t rawQ;
+ float dcI;
+ float dcQ;
 
 uint16_t voltageToDacCode(float v)
 {
