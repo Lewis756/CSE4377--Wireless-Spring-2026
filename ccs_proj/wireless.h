@@ -6,7 +6,7 @@
 
 typedef enum
 {
-    dc = 2,
+    dc = 100,
     sine = 0,
     bpsk = 1,
     qpsk = 2,

@@ -73,7 +73,7 @@ void writeDacAB(uint16_t rawI, uint16_t rawQ)
 void ISR() //pseudocode for frequency/NCO
 { //delatphase fixed point angle
 
-    uint8_t itteration = 0;
+    uint8_t iteration = 0;
     switch (mode)
     {
     case (sine): //sincos
@@ -119,11 +119,11 @@ void ISR() //pseudocode for frequency/NCO
     case (qpsk):
     {
         //always trnasmiting that hex value
-        ReadConstellation = ReadConstellation%SymbolCount;
-        uint8_t itteration = StoredQpsk[ReadConstellation];
+        ReadConstellation = ReadConstellation % SymbolCount;
+        uint8_t iteration = StoredQpsk[ReadConstellation];
 
-        rawI = DAC_ZERO_OFFSET + Iqpsk[itteration];
-        rawQ = DAC_ZERO_OFFSET + Qqpsk[itteration];
+        rawI = DAC_ZERO_OFFSET + Iqpsk[iteration];
+        rawQ = DAC_ZERO_OFFSET + Qqpsk[iteration];
 
         writeDacAB(rawI,rawQ);
 
@@ -133,7 +133,7 @@ void ISR() //pseudocode for frequency/NCO
     case (epsk):
     {
         ReadConstellation = ReadConstellation%SymbolCount; // valid symbols allwoed
-        itteration = StoredEpsk[ReadConstellation];
+        iteration = StoredEpsk[ReadConstellation];
 
         //rawI =
        // rawQ =
@@ -145,7 +145,7 @@ void ISR() //pseudocode for frequency/NCO
     case (qam):
     {
         ReadConstellation = ReadConstellation%SymbolCount; //m wraps around valid symbols
-        itteration = StoredQam[ReadConstellation];
+        iteration = StoredQam[ReadConstellation];
 
        // rawI =
      //   rawQ =
@@ -276,7 +276,7 @@ void bitSymbol(uint8_t size)
     {
         for (BitIndex = 0; BitIndex < 8; BitIndex++)
         {
-            StoredQpsk[BitIndex] = (infoByte >> BitIndex) & 3;
+            StoredQpsk[BitIndex] = (infoByte >> (BitIndex * 2)) & 3; //0011
             //shift to read lsb to msb
         }
     }
@@ -284,7 +284,7 @@ void bitSymbol(uint8_t size)
     {
         for (BitIndex = 0; BitIndex < 8; BitIndex++)
         {
-            StoredEpsk[BitIndex] = (infoByte >> BitIndex) & 7;
+            StoredEpsk[BitIndex] = (infoByte >> (BitIndex * 3)) & 7; //0111
             //shift to read lsb to msb
         }
     }
@@ -292,7 +292,7 @@ void bitSymbol(uint8_t size)
     {
         for (BitIndex = 0; BitIndex < 8; BitIndex++)
         {
-            StoredQam[BitIndex] = (infoByte >> BitIndex) & 15;
+            StoredQam[BitIndex] = (infoByte >> (BitIndex * 4)) & 15; //1111
             //shift to read lsb to msb
         }
     }
