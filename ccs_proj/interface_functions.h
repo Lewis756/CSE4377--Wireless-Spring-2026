@@ -33,5 +33,6 @@ size_t LenOfStr(const char* start);
 bool Stringcmpr(const char fieldstrg[], const char command[]);
 bool isCommand(USER_DATA* data, const char strCommand[], uint8_t minArguments);
 int stringToInt(char* str);
+bool HexToU32(const char *inputString, uint32_t *outputValue);
 
 #endif

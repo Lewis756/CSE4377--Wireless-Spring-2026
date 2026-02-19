@@ -24,6 +24,10 @@ main.obj: ../gpio.h
 main.obj: ../shell_interface.h
 main.obj: ../spi1.h
 main.obj: ../systick.h
+main.obj: ../wireless.h
+main.obj: C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/math.h
+main.obj: C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/_defs.h
+main.obj: C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/machine/_limits.h
 
 ../main.c:
 
@@ -72,4 +76,12 @@ C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/stdlib.h:
 ../spi1.h:
 
 ../systick.h:
+
+../wireless.h:
+
+C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/math.h:
+
+C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/_defs.h:
+
+C:/ti/ccs1281/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include/machine/_limits.h:
 

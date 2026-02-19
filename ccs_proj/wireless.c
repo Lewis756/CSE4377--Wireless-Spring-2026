@@ -1,5 +1,6 @@
 #include "wireless.h"
 #include "gpio.h"
+#include "spi1.h"
 //.354 = 730 ish
 //streaming bits/ byes
 // number f symnbols = total bits/ bits per Symbols different cases
@@ -120,7 +121,7 @@ void ISR() //pseudocode for frequency/NCO
     {
         //always trnasmiting that hex value
         ReadConstellation = ReadConstellation % SymbolCount;
-        uint8_t iteration = StoredQpsk[ReadConstellation];
+        iteration = StoredQpsk[ReadConstellation];
 
         rawI = DAC_ZERO_OFFSET + Iqpsk[iteration];
         rawQ = DAC_ZERO_OFFSET + Qqpsk[iteration];

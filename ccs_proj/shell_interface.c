@@ -14,7 +14,7 @@
 
 extern uint32_t delta_phase;
 extern uint16_t bpskSymbol;
-extern ReadConstellation;
+extern uint16_t ReadConstellation;
 
 void shell(void)
 {
@@ -121,7 +121,7 @@ void shell(void)
 
             setPhase(value);
             putsUart0("\r\n PHASE SET \r\n");
-
+            mode = sine;
         }
         if (isCommand(&data, "SINCOS", 0))
         {

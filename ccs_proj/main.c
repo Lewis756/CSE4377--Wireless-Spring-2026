@@ -7,6 +7,7 @@
 #include "shell_interface.h"
 #include "spi1.h"
 #include "systick.h"
+#include "wireless.h"
 
 //initialize hardware
 void intHW()
