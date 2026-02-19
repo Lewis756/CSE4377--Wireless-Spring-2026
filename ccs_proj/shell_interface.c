@@ -20,11 +20,15 @@
 //streaming
 #define NUM_BYTES 90 //90bytes x 8Bits = 720/1bitpersymbol=bpsk
 //qpsk 720/2 = 360 symbols
-//8psk 720/3 240 symbols
+//8psk 720/3 240 n symbols
 //16Qam 720/4 = 180 symbols
 //uint8_t dataBytes[NUM_BYTES];
 // fror step 13 data values in memory
 uint8_t StoredBpsk[8]; //BPSK array
+uint8_t StoredQpsk[8];
+uint8_t StoredEpsk[8];
+uint8_t StoredQam[8];
+//arrays to store
 uint16_t bpskSymbol = 0;
 uint8_t mode = 0;
 
@@ -234,6 +238,32 @@ void bitSymbol(uint8_t size)
             //shift to read lsb to msb
         }
     }
+    else if (size == 2) //gets two bits
+    {
+        for(BitIndex =0; BitIndex < 8; BitIndex++)
+        {
+            StoredQpsk[BitIndex] = (infoByte >> BitIndex) & 3;
+            //shift to read lsb to msb
+        }
+    }
+    else if(size == 3)
+    {
+        for(BitIndex =0; BitIndex < 8; BitIndex++)
+        {
+            StoredEpsk[BitIndex] = (infoByte >> BitIndex) & 7;
+            //shift to read lsb to msb
+        }
+    }
+    else if(size == 4)
+    {
+        for(BitIndex =0; BitIndex < 8; BitIndex++)
+        {
+            StoredQam[BitIndex] = (infoByte >> BitIndex) & 15;
+            //shift to read lsb to msb
+        }
+    }
+    }
+
 }
 // now volts to dac code
 // when dac gets code the op amp, the outputvoltage is measured
