@@ -9,21 +9,28 @@
 //16Qam 720/4 = 180 symbols
 //uint8_t dataBytes[NUM_BYTES];
 // fror step 13 data values in memory
-uint8_t StoredBpsk[8]; //BPSK array
-uint8_t StoredQpsk[8];
-uint8_t StoredEpsk[8];
-uint8_t StoredQam[8];
+// for a 32 bit integer
+uint8_t StoredBpsk[32]; //BPSK array 32 symbols
+uint8_t StoredQpsk[16];//qpsk 2 bits per symbol
+uint8_t StoredEpsk[10];//epsk 3 bits per symbol
+uint8_t StoredQam[8];//qam 4 bits per symbol
 //arrays to store
-uint16_t bpskSymbol = 0;
+uint16_t Symbol = 0; //isr index
+uint16_t SymbolCount = 0;
 uint8_t mode = 0;
+uint16_t ReadConstellation = 0;
 
 #define DAC_ZERO_OFFSET 2125 //2125 dac value for  zero volts
 #define I_GAIN 1960
+#define Q_GAIN 1960
 
 #define PI 3.14159265359f
 #define SAMPLE_SINE_WAVE 4095 // samples for cycle
 uint32_t frequency = 10000;
 uint16_t sineDacTable[SAMPLE_SINE_WAVE];
+
+int16_t Iqpsk[4] = {I_GAIN,I_GAIN,-I_GAIN,-I_GAIN};
+int16_t Qqpsk[4] = {Q_GAIN,-Q_GAIN,Q_GAIN,-Q_GAIN};
 
 #define FS 100000 //this number represents sample frequency, how many discrete points of the wave we calculate
 
@@ -63,9 +70,10 @@ void writeDacAB(uint16_t rawI, uint16_t rawQ)
 
 void ISR() //pseudocode for frequency/NCO
 { //delatphase fixed point angle
+
+   // uint8_t itteration = 0;
     switch (mode)
     {
-    case (dc): break;
     case (sine): //sincos
 
         delta_phase += phase; //2^32delathase/2^20 to get 12 bits
@@ -103,15 +111,30 @@ void ISR() //pseudocode for frequency/NCO
             writeDacAB(rawI, rawQ);
         }
         bpskSymbol++;
-        bpskSymbol = bpskSymbol % 8;
+       // bpskSymbol = bpskSymbol % 8;
+        bpskSymbol = bpskSymbol % SymbolCount;
         break;
+    case (qpsk):
+    {
+        //always trnasmiting that hex value
+        ReadConstellation = ReadConstellation%SymbolCount;
+        uint8_t itteration = StoredQpsk[ReadConstellation];
 
+        rawI = DAC_ZERO_OFFSET + Iqpsk[itteration];
+        rawQ = DAC_ZERO_OFFSET + Qqpsk[itteration];
+
+        writeDacAB(rawI,rawQ);
+
+        ReadConstellation++;
+        break;
+    }
     default:
         break;
         //  sin_val_i = LUT_sin[theta]; //LUT for sin
         //send the above value to the DAC
     }
 }
+
 //latest pairs
 //uint16_t rawI = 2125; //0v
 //uint16_t rawQ = 2125; //0v
@@ -248,7 +271,47 @@ void bitSymbol(uint8_t size)
         }
     }
 }
+void numberTransmitted(uint8_t size, uint32_t number)
+{
+    uint8_t Symbol;// extracted symbol
+    uint8_t BitIndex;//looping index
 
+    if (size == 1)//bpsk
+    {
+        SymbolCount = 32; // 32 bits fromm number
+        for (BitIndex = 0; BitIndex < 32; BitIndex++)
+        {
+            StoredBpsk[BitIndex] = (number >> BitIndex)&1;
+        }
+    }
+    else if (size == 2)//qpsk
+    {
+        SymbolCount = 16;//
+        for(BitIndex = 0; BitIndex < 16; BitIndex++)
+        {
+            Symbol = (number >> (BitIndex * 2)) & 0x03;
+            StoredQpsk[BitIndex] = Symbol;
+        }
+    }
+    else if (size == 3) // 8psk
+    {
+        SymbolCount = 10;
+        for(BitIndex = 0; BitIndex < 10; BitIndex++)
+        {
+            Symbol = (number >> (BitIndex * 3)) & 0x07;
+            StoredEpsk[BitIndex] = Symbol;
+        }
+    }
+    else if (size == 4) // qam
+    {
+        SymbolCount = 8;
+        for(BitIndex = 0; BitIndex < 8; BitIndex++)
+        {
+            Symbol = (number >> (BitIndex * 4)) & 0x0F;
+            StoredQam   [BitIndex] = Symbol;
+        }
+    }
+}
 // now volts to dac code
 // when dac gets code the op amp, the outputvoltage is measured
 //when type a voltage compute the dac code
