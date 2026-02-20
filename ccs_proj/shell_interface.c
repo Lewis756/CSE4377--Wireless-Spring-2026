@@ -150,8 +150,15 @@ void shell(void)
         {
             valid = true;
             mode = epsk;
-            numberTransmitted(3, 0x2345678910111213);
+            numberTransmitted(3, 0xFAC688FAC688FAC6);
             putsUart0("\r\n DISPLAYING EPSK \r\n");
+        }
+        if (isCommand(&data, "QAM", 0))
+        {
+            valid = true;
+            mode = qam;
+            numberTransmitted(4, 0xFEDCBA9876543210);
+            putsUart0("\r\n DISPLAYING QAM \r\n");
         }
         uint32_t sendWord = 0;
         if (isCommand(&data, "SEND", 2))

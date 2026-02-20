@@ -17,7 +17,7 @@
 
 uint8_t StoredBpsk[32*2]; //BPSK array 32 symbols
 uint8_t StoredQpsk[16*2];//qpsk 2 bits per symbol
-uint8_t StoredEpsk[10*2];//epsk 3 bits per symbol
+uint8_t StoredEpsk[10*2 + 1];//epsk 3 bits per symbol
 uint8_t StoredQam[8*2];//qam 4 bits per symbol
 //arrays to store
 
@@ -36,18 +36,47 @@ uint16_t bpskSymbol = 0;
 uint32_t frequency = 10000;
 uint16_t sineDacTable[SAMPLE_SINE_WAVE];
 
+int16_t Iqam[16] =
+{
+     I_GAIN,      I_GAIN,      I_GAIN,      I_GAIN,
+     I_GAIN/3,    I_GAIN/3,    I_GAIN/3,    I_GAIN/3,
+    -I_GAIN/3,   -I_GAIN/3,   -I_GAIN/3,   -I_GAIN/3,
+    -I_GAIN,     -I_GAIN,     -I_GAIN,     -I_GAIN
+};
+
+int16_t Qqam[16] =
+{
+     Q_GAIN,      Q_GAIN/3,   -Q_GAIN/3,   -Q_GAIN,
+     Q_GAIN,      Q_GAIN/3,   -Q_GAIN/3,   -Q_GAIN,
+     Q_GAIN,      Q_GAIN/3,   -Q_GAIN/3,   -Q_GAIN,
+     Q_GAIN,      Q_GAIN/3,   -Q_GAIN/3,   -Q_GAIN
+};
+
 int16_t Iqpsk[4] = {I_GAIN,I_GAIN,-I_GAIN,-I_GAIN};
 int16_t Qqpsk[4] = {Q_GAIN,-Q_GAIN,Q_GAIN,-Q_GAIN};
 
-int32_t Iepsk[8] = {I_GAIN * 1.00, I_GAIN * .71,
-                    -I_GAIN * .71, I_GAIN * 0,
-                    I_GAIN * .71, -I_GAIN * 0,
-                    -I_GAIN * 1, -I_GAIN * .71};
+int16_t Iepsk[8] = {
+    I_GAIN,                 // 0°
+    I_GAIN * 0.7071f,       // 45°
+    0,                      // 90°
+   -I_GAIN * 0.7071f,       // 135°
+   -I_GAIN,                 // 180°
+   -I_GAIN * 0.7071f,       // 225°
+    0,                      // 270°
+    I_GAIN * 0.7071f        // 315°
+};
 
-int32_t Qepsk[8] = {Q_GAIN * 0, Q_GAIN * .71,
-                   Q_GAIN * .71, Q_GAIN * 1.00,
-                   -Q_GAIN * .71, -Q_GAIN * 1.00,
-                   -Q_GAIN * 0, -Q_GAIN * .71};
+int16_t Qepsk[8] = {
+    0,                      // 0°
+    Q_GAIN * 0.7071f,       // 45°
+    Q_GAIN,                 // 90°
+    Q_GAIN * 0.7071f,       // 135°
+    0,                      // 180°
+   -Q_GAIN * 0.7071f,       // 225°
+   -Q_GAIN,                 // 270°
+   -Q_GAIN * 0.7071f        // 315°
+};
+
 
 #define FS 100000 //this number represents sample frequency, how many discrete points of the wave we calculate
 
@@ -152,40 +181,46 @@ void ISR() //pseudocode for frequency/NCO
     }
     case (epsk):
     {
-//        static uint8_t sampleCounter = 0;
-//
-//        if (sampleCounter == 0)
-//        {
+        static uint8_t sampleCounter = 0;
+
+        if (sampleCounter == 0)
+        {
             ReadConstellation = ReadConstellation % SymbolCount;
             iteration = StoredEpsk[ReadConstellation];
             rawI = DAC_ZERO_OFFSET + Iepsk[iteration];
             rawQ = DAC_ZERO_OFFSET + Qepsk[iteration];
             ReadConstellation++;
-      //  }
+        }
 
         writeDacAB(rawI, rawQ);
 
-//        sampleCounter++;
-//        sampleCounter %= 2;
+        sampleCounter++;
+        sampleCounter %= 2;
 
         break;
     }
     case (qam):
     {
-        ReadConstellation = ReadConstellation%SymbolCount; //m wraps around valid symbols
-        iteration = StoredQam[ReadConstellation];
+        static uint8_t sampleCounter = 0;
 
-       // rawI =
-     //   rawQ =
+        if (sampleCounter == 0)
+        {
+            ReadConstellation = ReadConstellation % SymbolCount;
+            iteration = StoredQam[ReadConstellation];
+            rawI = DAC_ZERO_OFFSET + Iqam[iteration];
+            rawQ = DAC_ZERO_OFFSET + Qqam[iteration];
+            ReadConstellation++;
+        }
 
-        writeDacAB(rawI,rawQ);
-        ReadConstellation++;
+        writeDacAB(rawI, rawQ);
+
+        sampleCounter++;
+        sampleCounter %= 2;
+
         break;
     }
     default:
         break;
-        //  sin_val_i = LUT_sin[theta]; //LUT for sin
-        //send the above value to the DAC
     }
 }
 
@@ -359,8 +394,8 @@ void numberTransmitted(uint8_t size, uint64_t number)
     }
     else if (size == 4) // qam
     {
-        SymbolCount = 8;
-        for(BitIndex = 0; BitIndex < 8; BitIndex++)
+        SymbolCount = 16;
+        for(BitIndex = 0; BitIndex < 16; BitIndex++)
         {
             SymbolStored = (number >> (BitIndex * 4)) & 0x0F; //1111
             StoredQam   [BitIndex] = SymbolStored;
