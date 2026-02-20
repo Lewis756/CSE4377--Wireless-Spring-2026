@@ -135,7 +135,7 @@ void shell(void)
         {
             valid = true;
             mode = bpsk;
-            numberTransmitted(1, 0x1B1B1B1B);
+          //  numberTransmitted(1, 0x1B1B1B1B);
             putsUart0("\r\n DISPLAYING BPSK \r\n");
 
         }
@@ -143,21 +143,21 @@ void shell(void)
         {
             valid = true;
             mode = qpsk;
-            numberTransmitted(2, 0x1E1E1B1B);
+           // numberTransmitted(2, 0x1E1E1B1B);
             putsUart0("\r\n DISPLAYING QPSK \r\n");
         }
         if (isCommand(&data, "EPSK", 0))
         {
             valid = true;
             mode = epsk;
-            numberTransmitted(3, 0xFAC688FAC688FAC6);
+          //  numberTransmitted(3, 0xFAC688FAC688FAC6);
             putsUart0("\r\n DISPLAYING EPSK \r\n");
         }
         if (isCommand(&data, "QAM", 0))
         {
             valid = true;
             mode = qam;
-            numberTransmitted(4, 0xFEDCBA9876543210);
+           // numberTransmitted(4, 0xFEDCBA9876543210);
             putsUart0("\r\n DISPLAYING QAM \r\n");
         }
         uint32_t sendWord = 0;

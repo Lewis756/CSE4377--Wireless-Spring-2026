@@ -114,12 +114,15 @@ void writeDacAB(uint16_t rawI, uint16_t rawQ)
     ldac_on();
 }
 
+uint64_t r;
 void ISR() //pseudocode for frequency/NCO
 { //delatphase fixed point angle
+    r = rand();
 
     uint8_t iteration = 0;
     switch (mode)
     {
+
     case (sine): //sincos
 
         delta_phase += phase; //2^32delathase/2^20 to get 12 bits
@@ -144,6 +147,8 @@ void ISR() //pseudocode for frequency/NCO
         //channel B rawQ sine
         break;
     case (bpsk): //bpsk
+        numberTransmitted(1, r);
+
         if (StoredBpsk[bpskSymbol] == 0)
         {
             rawI = DAC_ZERO_OFFSET - I_GAIN;
@@ -161,6 +166,7 @@ void ISR() //pseudocode for frequency/NCO
         break;
     case (qpsk):
     {
+        numberTransmitted(2, r);
         static uint8_t sampleCounter = 0;
 
         if (sampleCounter == 0)
@@ -181,6 +187,8 @@ void ISR() //pseudocode for frequency/NCO
     }
     case (epsk):
     {
+        numberTransmitted(3, r);
+
         static uint8_t sampleCounter = 0;
 
         if (sampleCounter == 0)
@@ -201,6 +209,8 @@ void ISR() //pseudocode for frequency/NCO
     }
     case (qam):
     {
+        numberTransmitted(4, r);
+
         static uint8_t sampleCounter = 0;
 
         if (sampleCounter == 0)
