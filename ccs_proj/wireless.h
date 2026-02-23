@@ -1,7 +1,6 @@
 #ifndef WIRELESS_H_
 #define WIRELESS_H_
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
 #include <stdlib.h>
@@ -27,5 +26,6 @@ void setPhase(uint32_t fout);
 void sine_values();
 uint16_t voltageToDacCode(float v);
 void setSymbolRate(uint32_t rate);
+void setFilterStatus();
 
 #endif /* WIRELESS_H_ */

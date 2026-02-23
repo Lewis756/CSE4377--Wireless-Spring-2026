@@ -30,8 +30,6 @@ void shell(void)
     setTransmitBuffer(input, 256);
     while (true)
     {
-        putcUart0('>');
-
         getsUart0(&data);
         parseFields(&data);
         bool valid = false;
@@ -181,7 +179,7 @@ void shell(void)
         {
             valid = true;
             putsUart0("\r\n FILTERING TURNED ON \r\n");
-         //   setfilterStatus(1);
+            setFilterStatus(1);
         }
         if (!valid)
         {

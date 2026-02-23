@@ -1,6 +1,8 @@
 #include "wireless.h"
 #include "gpio.h"
 #include "spi1.h"
+#include <stdbool.h>
+
 uint8_t mode = 0;
 
 #define DAC_ZERO_OFFSET 2125 //2125 dac value for  zero volts
@@ -12,8 +14,8 @@ uint8_t mode = 0;
 uint32_t frequency = 10000;
 uint16_t sineDacTable[SAMPLE_SINE_WAVE];
 #define H_GAIN 65536
-// taps below
-int16_t RRCfilter[33] = { 0.0106 * H_GAIN, 0.0058 * H_GAIN, -0.0097 * H_GAIN,
+#define FS 100000
+int32_t RRCfilter[33] = { 0.0106 * H_GAIN, 0.0058 * H_GAIN, -0.0097 * H_GAIN,
                           -0.0214 * H_GAIN, -0.0188 * H_GAIN, 0.0030 * H_GAIN,
                           0.0327 * H_GAIN, 0.0471 * H_GAIN, 0.0265 * H_GAIN,
                           -0.0275 * H_GAIN,
@@ -120,9 +122,10 @@ void setTransmitBuffer(uint8_t *data, uint32_t length)
 volatile uint32_t symbolRate = 1000;        // default 1 ksym/sec
 volatile uint32_t samplesPerSymbol = 100;   // FS / symbolRate
 volatile uint32_t sampleTick = 0;
+
 void setPhase(uint32_t fout)
 {
-    phase = (uint32_t) (((float) fout / (100000) * 4294967296)); //phase is a function of the desired wave freq/sampling freq * 2^32
+    phase = (uint32_t) (((float) fout / (FS) * 4294967296)); //phase is a function of the desired wave freq/sampling freq * 2^32
 }
 
 void setSymbolRate(uint32_t rate)
@@ -132,12 +135,19 @@ void setSymbolRate(uint32_t rate)
 
     symbolRate = rate;
 
-    samplesPerSymbol = 100000 / symbolRate;
+    samplesPerSymbol = FS / symbolRate;
 
     if (samplesPerSymbol == 0)
         samplesPerSymbol = 1;   // prevent invalid case
 
     sampleTick = 0;
+}
+
+bool filter;
+
+void setFilterStatus()
+{
+    filter ^= 1;
 }
 
 void ISR()
