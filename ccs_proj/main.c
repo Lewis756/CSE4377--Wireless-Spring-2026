@@ -20,7 +20,7 @@ void intHW()
     setSpi1Mode(0, 0);
     enablePort(PORTF);
     selectPinPushPullOutput(PORTF, 1);
-    setPinValue(PORTF, 1, 1); //set ldac on
+    setPinValue(PORTF, 1, 1); //set ldac high
     init_SysTick();
 }
 

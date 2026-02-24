@@ -15,9 +15,7 @@ uint32_t frequency = 10000;
 uint16_t sineDacTable[SAMPLE_SINE_WAVE];
 #define H_GAIN 65536
 #define FS 100000
-int32_t RRCfilter[33] =
-{
-                          0.0106 * H_GAIN, 0.0058 * H_GAIN, -0.0097 * H_GAIN,
+int32_t RRCfilter[33] = { 0.0106 * H_GAIN, 0.0058 * H_GAIN, -0.0097 * H_GAIN,
                           -0.0214 * H_GAIN, -0.0188 * H_GAIN, 0.0030 * H_GAIN,
                           0.0327 * H_GAIN, 0.0471 * H_GAIN, 0.0265 * H_GAIN,
                           -0.0275 * H_GAIN,
@@ -28,52 +26,47 @@ int32_t RRCfilter[33] =
                           0.3110 * H_GAIN,
                           0.4717 * H_GAIN,
                           0.5343 * H_GAIN, // Center Tap
-                          0.4717 * H_GAIN,
-                          0.3110 * H_GAIN,
-                          0.1190 * H_GAIN,
-                          -0.0321 * H_GAIN,
-                          -0.0994 * H_GAIN,
-                          -0.0852 * H_GAIN,
-                          -0.0275 * H_GAIN,
-                          0.0265 * H_GAIN, 0.0471 * H_GAIN, 0.0327 * H_GAIN,
-                          0.0030 * H_GAIN, -0.0188 * H_GAIN, -0.0214 * H_GAIN,
-                          -0.0097 * H_GAIN, 0.0058 * H_GAIN, 0.0106 * H_GAIN,
-};
+                          0.4717 * H_GAIN, 0.3110 * H_GAIN, 0.1190 * H_GAIN,
+                          -0.0321 * H_GAIN, -0.0994 * H_GAIN, -0.0852 * H_GAIN,
+                          -0.0275 * H_GAIN, 0.0265 * H_GAIN, 0.0471 * H_GAIN,
+                          0.0327 * H_GAIN, 0.0030 * H_GAIN, -0.0188 * H_GAIN,
+                          -0.0214 * H_GAIN, -0.0097 * H_GAIN, 0.0058 * H_GAIN,
+                          0.0106 * H_GAIN, };
 
-int16_t Iqam[16] =
-{
-                     I_GAIN, I_GAIN, I_GAIN, I_GAIN,
-                     I_GAIN / 3, I_GAIN / 3, I_GAIN / 3, I_GAIN / 3,
-                     -I_GAIN / 3, -I_GAIN/ 3, -I_GAIN / 3, -I_GAIN / 3,
-                     -I_GAIN, -I_GAIN, -I_GAIN, -I_GAIN
-};
+int16_t Iqam[16] = {
+I_GAIN,
+                     I_GAIN, I_GAIN, I_GAIN,
+                     I_GAIN / 3,
+                     I_GAIN / 3, I_GAIN / 3, I_GAIN / 3, -I_GAIN / 3, -I_GAIN
+                             / 3,
+                     -I_GAIN / 3, -I_GAIN / 3, -I_GAIN, -I_GAIN, -I_GAIN,
+                     -I_GAIN };
 
-int16_t Qqam[16] =
-{
-                     Q_GAIN, Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN,
-                     Q_GAIN, Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN,
-                     Q_GAIN, Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN,
-                     Q_GAIN, Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN
-};
+int16_t Qqam[16] = {
+Q_GAIN,
+                     Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN,
+                     Q_GAIN,
+                     Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN,
+                     Q_GAIN,
+                     Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN,
+                     Q_GAIN,
+                     Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN };
 
 int16_t Iqpsk[4] = { I_GAIN, I_GAIN, -I_GAIN, -I_GAIN };
 int16_t Qqpsk[4] = { Q_GAIN, -Q_GAIN, Q_GAIN, -Q_GAIN };
 
-int16_t Iepsk[8] =
-{
-                    I_GAIN,                 // 0
-                    I_GAIN * 0.7071f,       // 45
-                    0,                      // 90
-                    -I_GAIN * 0.7071f,       // 135
-                    -I_GAIN,                 // 180
-                    -I_GAIN * 0.7071f,       // 225
-                    0,                      // 270
-                    I_GAIN * 0.7071f        // 315
+int16_t Iepsk[8] = {
+I_GAIN,                 // 0
+        I_GAIN * 0.7071f,       // 45
+        0,                      // 90
+        -I_GAIN * 0.7071f,       // 135
+        -I_GAIN,                 // 180
+        -I_GAIN * 0.7071f,       // 225
+        0,                      // 270
+        I_GAIN * 0.7071f        // 315
 };
 
-int16_t Qepsk[8] =
-{
-                  0,          // 0
+int16_t Qepsk[8] = { 0,          // 0
         Q_GAIN * 0.7071f,       // 45
         Q_GAIN,                 // 90
         Q_GAIN * 0.7071f,       // 135
@@ -105,6 +98,13 @@ bool filter;
 void setFilterStatus()
 {
     filter ^= 1;
+//    if(filter == 1)
+//    {
+//        NVIC_ST_CTRL_R = 0; //off
+//        NVIC_ST_RELOAD_R = 199; // 800/4 -1 = 199
+//        NVIC_ST_CURRENT_R = 0; //current value is 0
+//        NVIC_ST_CTRL_R |= NVIC_ST_CTRL_ENABLE | NVIC_ST_CTRL_INTEN | NVIC_ST_CTRL_CLK_SRC;
+//    }
 }
 
 void writeDacAB(uint16_t rawI, uint16_t rawQ)
@@ -159,13 +159,13 @@ void setSymbolRate(uint32_t rate)
 uint32_t bufferI[33];
 uint32_t bufferQ[33];
 
-void convolve(int16_t Iup, int16_t Qup)
+void convolve(int16_t Iup, int16_t Qup) //convolution from signals
 {
     int32_t sumI = 0;
     int32_t sumQ = 0;
 
     int i;
-    for (i = 32; i > 0; i--)
+    for (i = 32; i > 0; i--) //shift
     {
         bufferI[i] = bufferI[i - 1];
         bufferQ[i] = bufferQ[i - 1];
@@ -175,7 +175,7 @@ void convolve(int16_t Iup, int16_t Qup)
     bufferQ[0] = Qup;
 
     int j;
-    for (j = 0; j < 33; j++)
+    for (j = 0; j < 33; j++) // sumnation
     {
         sumI += (int32_t) bufferI[j] * RRCfilter[j];
         sumQ += (int32_t) bufferQ[j] * RRCfilter[j];
@@ -200,7 +200,7 @@ void ISR()
     {
         delta_phase += phase;
 
-        phaseCosine = ((delta_phase + 1073741824) >> 20);
+        phaseCosine = ((delta_phase + 1073741824) >> 20); //+90 offset
         phaseSine = (delta_phase >> 20);
 
         rawI = sineDacTable[phaseCosine];
@@ -217,7 +217,7 @@ void ISR()
 
         if (filter)  //for filtering,
         {
-            if ((count % 4) == 0)  //Ensure there are 3 zeros between each convolution
+            if ((count % 4) == 0) //Ensure there are 3 zeros between each convolution
             {
                 if (txByteIndex >= txLength)
                     txByteIndex = 0;
@@ -241,7 +241,6 @@ void ISR()
                 symbolQ = 0;
             }
 
-            convolve(symbolI, symbolQ);
             count++;
         }
         else //non filtering
