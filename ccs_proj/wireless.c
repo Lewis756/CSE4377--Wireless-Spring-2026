@@ -3,7 +3,7 @@
 #include "spi1.h"
 #include <stdbool.h>
 
-uint8_t mode = 0;
+MODE mode = 0;
 
 #define DAC_ZERO_OFFSET 2125 //2125 dac value for  zero volts
 #define I_GAIN 1960
@@ -56,14 +56,14 @@ int16_t Iqpsk[4] = { I_GAIN, I_GAIN, -I_GAIN, -I_GAIN };
 int16_t Qqpsk[4] = { Q_GAIN, -Q_GAIN, Q_GAIN, -Q_GAIN };
 
 int16_t Iepsk[8] = {
-I_GAIN,                 // 0
-        I_GAIN * 0.7071f,       // 45
-        0,                      // 90
-        -I_GAIN * 0.7071f,       // 135
-        -I_GAIN,                 // 180
-        -I_GAIN * 0.7071f,       // 225
-        0,                      // 270
-        I_GAIN * 0.7071f        // 315
+                    I_GAIN,                 // 0
+                    I_GAIN * 0.7071f,       // 45
+                    0,                      // 90
+                    -I_GAIN * 0.7071f,       // 135
+                    -I_GAIN,                 // 180
+                    -I_GAIN * 0.7071f,       // 225
+                    0,                      // 270
+                    I_GAIN * 0.7071f        // 315
 };
 
 int16_t Qepsk[8] = { 0,                      // 0
@@ -170,8 +170,8 @@ void convolve(int16_t Iup, int16_t Qup)
     int j;
     for (j = 0; j < 33; j++)
     {
-        sumI += (int32_t)bufferI[j] * RRCfilter[j];
-        sumQ += (int32_t)bufferQ[j] * RRCfilter[j];
+        sumI += (int32_t) bufferI[j] * RRCfilter[j];
+        sumQ += (int32_t) bufferQ[j] * RRCfilter[j];
     }
 
     sumI >>= 15;
@@ -189,268 +189,279 @@ void ISR()
 {
     switch (mode)
     {
-        case (sine):
+    case (sine):
+    {
+        delta_phase += phase;
+
+        phaseCosine = ((delta_phase + 1073741824) >> 20);
+        phaseSine = (delta_phase >> 20);
+
+        rawI = sineDacTable[phaseCosine];
+        rawQ = sineDacTable[phaseSine];
+
+        writeDacAB(rawI, rawQ);
+        break;
+    }
+
+    case (bpsk):
+    {
+        int16_t symbolI = 0;
+        int16_t symbolQ = 0;
+
+        if (filter)  // filtered path
         {
-            delta_phase += phase;
+            if ((count % 4) == 0)  // new symbol every 4 samples
+            {
+                if (txByteIndex >= txLength)
+                    txByteIndex = 0;
 
-            phaseCosine = ((delta_phase + 1073741824) >> 20);
-            phaseSine   = (delta_phase >> 20);
+                uint8_t currentByte = txBuffer[txByteIndex];
+                uint8_t bit = (currentByte >> txBitIndex) & 0x01;
 
-            rawI = sineDacTable[phaseCosine];
-            rawQ = sineDacTable[phaseSine];
+                symbolI = (bit == 0) ? -I_GAIN : I_GAIN;
+                symbolQ = 0;
+
+                txBitIndex++;
+                if (txBitIndex >= 8)
+                {
+                    txBitIndex = 0;
+                    txByteIndex++;
+                }
+            }
+            else
+            {
+                symbolI = 0;
+                symbolQ = 0;
+            }
+
+            convolve(symbolI, symbolQ);
+            count++;
+        }
+        else  // rectangular / unfiltered
+        {
+            if (sampleTick == 0)
+            {
+                if (txByteIndex >= txLength)
+                    txByteIndex = 0;
+
+                uint8_t currentByte = txBuffer[txByteIndex];
+                uint8_t bit = (currentByte >> txBitIndex) & 0x01;
+
+                rawI = (bit == 0) ?
+                        (DAC_ZERO_OFFSET - I_GAIN) : (DAC_ZERO_OFFSET + I_GAIN);
+                rawQ = DAC_ZERO_OFFSET;
+
+                txBitIndex++;
+                if (txBitIndex >= 8)
+                {
+                    txBitIndex = 0;
+                    txByteIndex++;
+                }
+            }
 
             writeDacAB(rawI, rawQ);
-            break;
+
+            sampleTick++;
+            if (sampleTick >= samplesPerSymbol)
+                sampleTick = 0;
         }
+        break;
+    }
 
-        case (bpsk):
+    case (qpsk):
+    {
+        int16_t symbolI = 0;
+        int16_t symbolQ = 0;
+
+        if (filter)
         {
-            int16_t symbolI = 0;
-            int16_t symbolQ = 0;
-
-            if (filter)  // filtered path
+            if ((count % 4) == 0)  // new symbol every 4 samples
             {
-                if ((count % 4) == 0)  // new symbol every 4 samples
+                if (txByteIndex >= txLength)
+                    txByteIndex = 0;
+
+                uint8_t currentByte = txBuffer[txByteIndex];
+                uint8_t sym = (currentByte >> txBitIndex) & 0x03;
+
+                symbolI = Iqpsk[sym];
+                symbolQ = Qqpsk[sym];
+
+                txBitIndex += 2;
+                if (txBitIndex >= 8)
                 {
-                    if (txByteIndex >= txLength) txByteIndex = 0;
-
-                    uint8_t currentByte = txBuffer[txByteIndex];
-                    uint8_t bit = (currentByte >> txBitIndex) & 0x01;
-
-                    symbolI = (bit == 0) ? -I_GAIN : I_GAIN;
-                    symbolQ = 0;
-
-                    txBitIndex++;
-                    if (txBitIndex >= 8)
-                    {
-                        txBitIndex = 0;
-                        txByteIndex++;
-                    }
+                    txBitIndex = 0;
+                    txByteIndex++;
                 }
-                else
-                {
-                    symbolI = 0;
-                    symbolQ = 0;
-                }
-
-                convolve(symbolI, symbolQ);
-                count++;
-            }
-            else  // rectangular / unfiltered
-            {
-                if (sampleTick == 0)
-                {
-                    if (txByteIndex >= txLength) txByteIndex = 0;
-
-                    uint8_t currentByte = txBuffer[txByteIndex];
-                    uint8_t bit = (currentByte >> txBitIndex) & 0x01;
-
-                    rawI = (bit == 0) ? (DAC_ZERO_OFFSET - I_GAIN) : (DAC_ZERO_OFFSET + I_GAIN);
-                    rawQ = DAC_ZERO_OFFSET;
-
-                    txBitIndex++;
-                    if (txBitIndex >= 8)
-                    {
-                        txBitIndex = 0;
-                        txByteIndex++;
-                    }
-                }
-
-                writeDacAB(rawI, rawQ);
-
-                sampleTick++;
-                if (sampleTick >= samplesPerSymbol) sampleTick = 0;
-            }
-            break;
-        }
-
-        case (qpsk):
-        {
-            int16_t symbolI = 0;
-            int16_t symbolQ = 0;
-
-            if (filter)
-            {
-                if ((count % 4) == 0)  // new symbol every 4 samples
-                {
-                    if (txByteIndex >= txLength) txByteIndex = 0;
-
-                    uint8_t currentByte = txBuffer[txByteIndex];
-                    uint8_t sym = (currentByte >> txBitIndex) & 0x03;
-
-                    symbolI = Iqpsk[sym];
-                    symbolQ = Qqpsk[sym];
-
-                    txBitIndex += 2;
-                    if (txBitIndex >= 8)
-                    {
-                        txBitIndex = 0;
-                        txByteIndex++;
-                    }
-                }
-                else
-                {
-                    symbolI = 0;
-                    symbolQ = 0;
-                }
-
-                convolve(symbolI, symbolQ);
-                count++;
             }
             else
             {
-                if (sampleTick == 0)
-                {
-                    if (txByteIndex >= txLength) txByteIndex = 0;
-
-                    uint8_t currentByte = txBuffer[txByteIndex];
-                    uint8_t sym = (currentByte >> txBitIndex) & 0x03;
-
-                    rawI = DAC_ZERO_OFFSET + Iqpsk[sym];
-                    rawQ = DAC_ZERO_OFFSET + Qqpsk[sym];
-
-                    txBitIndex += 2;
-                    if (txBitIndex >= 8)
-                    {
-                        txBitIndex = 0;
-                        txByteIndex++;
-                    }
-                }
-
-                writeDacAB(rawI, rawQ);
-
-                sampleTick++;
-                if (sampleTick >= samplesPerSymbol) sampleTick = 0;
-                break;
+                symbolI = 0;
+                symbolQ = 0;
             }
+
+            convolve(symbolI, symbolQ);
+            count++;
         }
-
-        case (epsk):  // 8-PSK
+        else
         {
-            int16_t symbolI = 0;
-            int16_t symbolQ = 0;
-
-            if (filter)
+            if (sampleTick == 0)
             {
-                if ((count % 4) == 0)
+                if (txByteIndex >= txLength)
+                    txByteIndex = 0;
+
+                uint8_t currentByte = txBuffer[txByteIndex];
+                uint8_t sym = (currentByte >> txBitIndex) & 0x03;
+
+                rawI = DAC_ZERO_OFFSET + Iqpsk[sym];
+                rawQ = DAC_ZERO_OFFSET + Qqpsk[sym];
+
+                txBitIndex += 2;
+                if (txBitIndex >= 8)
                 {
-                    if (txByteIndex >= txLength) txByteIndex = 0;
-
-                    uint8_t currentByte = txBuffer[txByteIndex];
-                    uint8_t sym = (currentByte >> txBitIndex) & 0x07;
-
-                    symbolI = Iepsk[sym];
-                    symbolQ = Qepsk[sym];
-
-                    txBitIndex += 3;
-                    if (txBitIndex >= 8)
-                    {
-                        txBitIndex -= 8;
-                        txByteIndex++;
-                    }
+                    txBitIndex = 0;
+                    txByteIndex++;
                 }
-                else
+            }
+
+            writeDacAB(rawI, rawQ);
+
+            sampleTick++;
+            if (sampleTick >= samplesPerSymbol)
+                sampleTick = 0;
+            break;
+        }
+    }
+
+    case (epsk):  // 8-PSK
+    {
+        int16_t symbolI = 0;
+        int16_t symbolQ = 0;
+
+        if (filter)
+        {
+            if ((count % 4) == 0)
+            {
+                if (txByteIndex >= txLength)
+                    txByteIndex = 0;
+
+                uint8_t currentByte = txBuffer[txByteIndex];
+                uint8_t sym = (currentByte >> txBitIndex) & 0x07;
+
+                symbolI = Iepsk[sym];
+                symbolQ = Qepsk[sym];
+
+                txBitIndex += 3;
+                if (txBitIndex >= 8)
                 {
-                    symbolI = 0;
-                    symbolQ = 0;
+                    txBitIndex -= 8;
+                    txByteIndex++;
                 }
-
-                convolve(symbolI, symbolQ);
-                count++;
             }
             else
             {
-                if (sampleTick == 0)
-                {
-                    if (txByteIndex >= txLength) txByteIndex = 0;
-
-                    uint8_t currentByte = txBuffer[txByteIndex];
-                    uint8_t sym = (currentByte >> txBitIndex) & 0x07;
-
-                    rawI = DAC_ZERO_OFFSET + Iepsk[sym];
-                    rawQ = DAC_ZERO_OFFSET + Qepsk[sym];
-
-                    txBitIndex += 3;
-                    if (txBitIndex >= 8)
-                    {
-                        txBitIndex -= 8;
-                        txByteIndex++;
-                    }
-                }
-
-                writeDacAB(rawI, rawQ);
-
-                sampleTick++;
-                if (sampleTick >= samplesPerSymbol) sampleTick = 0;
+                symbolI = 0;
+                symbolQ = 0;
             }
-            break;
+
+            convolve(symbolI, symbolQ);
+            count++;
         }
-
-        case (qam):  // 16-QAM
+        else
         {
-            int16_t symbolI = 0;
-            int16_t symbolQ = 0;
-
-            if (filter)
+            if (sampleTick == 0)
             {
-                if ((count % 4) == 0)
+                if (txByteIndex >= txLength)
+                    txByteIndex = 0;
+
+                uint8_t currentByte = txBuffer[txByteIndex];
+                uint8_t sym = (currentByte >> txBitIndex) & 0x07;
+
+                rawI = DAC_ZERO_OFFSET + Iepsk[sym];
+                rawQ = DAC_ZERO_OFFSET + Qepsk[sym];
+
+                txBitIndex += 3;
+                if (txBitIndex >= 8)
                 {
-                    if (txByteIndex >= txLength) txByteIndex = 0;
-
-                    uint8_t currentByte = txBuffer[txByteIndex];
-                    uint8_t sym = (currentByte >> txBitIndex) & 0x0F;
-
-                    symbolI = Iqam[sym];
-                    symbolQ = Qqam[sym];
-
-                    txBitIndex += 4;
-                    if (txBitIndex >= 8)
-                    {
-                        txBitIndex = 0;
-                        txByteIndex++;
-                    }
+                    txBitIndex -= 8;
+                    txByteIndex++;
                 }
-                else
+            }
+
+            writeDacAB(rawI, rawQ);
+
+            sampleTick++;
+            if (sampleTick >= samplesPerSymbol)
+                sampleTick = 0;
+        }
+        break;
+    }
+
+    case (qam):  // 16-QAM
+    {
+        int16_t symbolI = 0;
+        int16_t symbolQ = 0;
+
+        if (filter)
+        {
+            if ((count % 4) == 0)
+            {
+                if (txByteIndex >= txLength)
+                    txByteIndex = 0;
+
+                uint8_t currentByte = txBuffer[txByteIndex];
+                uint8_t sym = (currentByte >> txBitIndex) & 0x0F;
+
+                symbolI = Iqam[sym];
+                symbolQ = Qqam[sym];
+
+                txBitIndex += 4;
+                if (txBitIndex >= 8)
                 {
-                    symbolI = 0;
-                    symbolQ = 0;
+                    txBitIndex = 0;
+                    txByteIndex++;
                 }
-
-                convolve(symbolI, symbolQ);
-                count++;
             }
             else
             {
-                if (sampleTick == 0)
-                {
-                    if (txByteIndex >= txLength)
-                        txByteIndex = 0;
-
-                    uint8_t currentByte = txBuffer[txByteIndex];
-                    uint8_t symbol = (currentByte >> txBitIndex) & 0x0F;
-
-                    rawI = DAC_ZERO_OFFSET + Iqam[symbol];
-                    rawQ = DAC_ZERO_OFFSET + Qqam[symbol];
-
-                    txBitIndex += 4;
-                    if (txBitIndex >= 8)
-                    {
-                        txBitIndex = 0;
-                        txByteIndex++;
-                    }
-                }
-
-                writeDacAB(rawI, rawQ);
-                sampleTick++;
-                if (sampleTick >= samplesPerSymbol)
-                    sampleTick = 0;
-                break;
+                symbolI = 0;
+                symbolQ = 0;
             }
+
+            convolve(symbolI, symbolQ);
+            count++;
+        }
+        else
+        {
+            if (sampleTick == 0)
+            {
+                if (txByteIndex >= txLength)
+                    txByteIndex = 0;
+
+                uint8_t currentByte = txBuffer[txByteIndex];
+                uint8_t symbol = (currentByte >> txBitIndex) & 0x0F;
+
+                rawI = DAC_ZERO_OFFSET + Iqam[symbol];
+                rawQ = DAC_ZERO_OFFSET + Qqam[symbol];
+
+                txBitIndex += 4;
+                if (txBitIndex >= 8)
+                {
+                    txBitIndex = 0;
+                    txByteIndex++;
+                }
+            }
+
+            writeDacAB(rawI, rawQ);
+            sampleTick++;
+            if (sampleTick >= samplesPerSymbol)
+                sampleTick = 0;
             break;
         }
+        break;
+    }
 
-        default:
-            break;
+    default:
+        break;
     }
 }
 
