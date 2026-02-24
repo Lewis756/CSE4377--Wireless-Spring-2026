@@ -1,7 +1,7 @@
 ******************************************************************************
                   TI ARM Linker PC v20.2.7                     
 ******************************************************************************
->> Linked Tue Feb 24 00:17:15 2026
+>> Linked Tue Feb 24 02:27:07 2026
 
 OUTPUT FILE NAME:   <wireless.out>
 ENTRY POINT SYMBOL: "_c_int00_noargs"  address: 00003a3d
@@ -85,8 +85,8 @@ section   page    origin      length       input sections
                   00003b70    00000158     rtsv7M4_T_le_v4SPD16_eabi.lib : k_rem_pio2.c.obj (.const:$O1$$)
 
 .cinit     0    00003cc8    000000f0     
-                  00003cc8    000000ca     (.cinit..data.load) [load image, compression = lzss]
-                  00003d92    00000002     --HOLE-- [fill = 0]
+                  00003cc8    000000c9     (.cinit..data.load) [load image, compression = lzss]
+                  00003d91    00000003     --HOLE-- [fill = 0]
                   00003d94    0000000c     (__TI_handler_table)
                   00003da0    00000008     (.cinit..bss.load) [load image, compression = zero_init]
                   00003da8    00000010     (__TI_cinit_table)
@@ -177,15 +177,15 @@ MODULE SUMMARY
        Total:                         6716    344       16     
                                                                
        Stack:                         0       0         1024   
-       Linker Generated:              0       238       0      
+       Linker Generated:              0       237       0      
     +--+------------------------------+-------+---------+---------+
-       Grand Total:                   14588   1202      10066  
+       Grand Total:                   14588   1201      10066  
 
 
 LINKER GENERATED COPY TABLES
 
 __TI_cinit_table @ 00003da8 records: 2, size/record: 8, table size: 16
-	.data: load addr=00003cc8, load size=000000ca bytes, run addr=20002618, run size=0000013c bytes, compression=lzss
+	.data: load addr=00003cc8, load size=000000c9 bytes, run addr=20002618, run size=0000013c bytes, compression=lzss
 	.bss: load addr=00003da0, load size=00000008 bytes, run addr=20000000, run size=00002216 bytes, compression=zero_init
 
 

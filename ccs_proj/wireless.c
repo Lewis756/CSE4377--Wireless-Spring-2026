@@ -3,7 +3,7 @@
 #include "spi1.h"
 #include <stdbool.h>
 
-MODE mode = 0;
+MODE mode = dc;
 
 #define DAC_ZERO_OFFSET 2125 //2125 dac value for  zero volts
 #define I_GAIN 1960
@@ -15,7 +15,9 @@ uint32_t frequency = 10000;
 uint16_t sineDacTable[SAMPLE_SINE_WAVE];
 #define H_GAIN 65536
 #define FS 100000
-int32_t RRCfilter[33] = { 0.0106 * H_GAIN, 0.0058 * H_GAIN, -0.0097 * H_GAIN,
+int32_t RRCfilter[33] =
+{
+                          0.0106 * H_GAIN, 0.0058 * H_GAIN, -0.0097 * H_GAIN,
                           -0.0214 * H_GAIN, -0.0188 * H_GAIN, 0.0030 * H_GAIN,
                           0.0327 * H_GAIN, 0.0471 * H_GAIN, 0.0265 * H_GAIN,
                           -0.0275 * H_GAIN,
@@ -26,36 +28,39 @@ int32_t RRCfilter[33] = { 0.0106 * H_GAIN, 0.0058 * H_GAIN, -0.0097 * H_GAIN,
                           0.3110 * H_GAIN,
                           0.4717 * H_GAIN,
                           0.5343 * H_GAIN, // Center Tap
-                          0.4717 * H_GAIN, 0.3110 * H_GAIN, 0.1190 * H_GAIN,
-                          -0.0321 * H_GAIN, -0.0994 * H_GAIN, -0.0852 * H_GAIN,
-                          -0.0275 * H_GAIN, 0.0265 * H_GAIN, 0.0471 * H_GAIN,
-                          0.0327 * H_GAIN, 0.0030 * H_GAIN, -0.0188 * H_GAIN,
-                          -0.0214 * H_GAIN, -0.0097 * H_GAIN, 0.0058 * H_GAIN,
-                          0.0106 * H_GAIN, };
+                          0.4717 * H_GAIN,
+                          0.3110 * H_GAIN,
+                          0.1190 * H_GAIN,
+                          -0.0321 * H_GAIN,
+                          -0.0994 * H_GAIN,
+                          -0.0852 * H_GAIN,
+                          -0.0275 * H_GAIN,
+                          0.0265 * H_GAIN, 0.0471 * H_GAIN, 0.0327 * H_GAIN,
+                          0.0030 * H_GAIN, -0.0188 * H_GAIN, -0.0214 * H_GAIN,
+                          -0.0097 * H_GAIN, 0.0058 * H_GAIN, 0.0106 * H_GAIN,
+};
 
-int16_t Iqam[16] = {
-I_GAIN,
-                     I_GAIN, I_GAIN, I_GAIN,
-                     I_GAIN / 3,
-                     I_GAIN / 3, I_GAIN / 3, I_GAIN / 3, -I_GAIN / 3, -I_GAIN
-                             / 3,
-                     -I_GAIN / 3, -I_GAIN / 3, -I_GAIN, -I_GAIN, -I_GAIN,
-                     -I_GAIN };
+int16_t Iqam[16] =
+{
+                     I_GAIN, I_GAIN, I_GAIN, I_GAIN,
+                     I_GAIN / 3, I_GAIN / 3, I_GAIN / 3, I_GAIN / 3,
+                     -I_GAIN / 3, -I_GAIN/ 3, -I_GAIN / 3, -I_GAIN / 3,
+                     -I_GAIN, -I_GAIN, -I_GAIN, -I_GAIN
+};
 
-int16_t Qqam[16] = {
-Q_GAIN,
-                     Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN,
-                     Q_GAIN,
-                     Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN,
-                     Q_GAIN,
-                     Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN,
-                     Q_GAIN,
-                     Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN };
+int16_t Qqam[16] =
+{
+                     Q_GAIN, Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN,
+                     Q_GAIN, Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN,
+                     Q_GAIN, Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN,
+                     Q_GAIN, Q_GAIN / 3, -Q_GAIN / 3, -Q_GAIN
+};
 
 int16_t Iqpsk[4] = { I_GAIN, I_GAIN, -I_GAIN, -I_GAIN };
 int16_t Qqpsk[4] = { Q_GAIN, -Q_GAIN, Q_GAIN, -Q_GAIN };
 
-int16_t Iepsk[8] = {
+int16_t Iepsk[8] =
+{
                     I_GAIN,                 // 0
                     I_GAIN * 0.7071f,       // 45
                     0,                      // 90
@@ -66,7 +71,9 @@ int16_t Iepsk[8] = {
                     I_GAIN * 0.7071f        // 315
 };
 
-int16_t Qepsk[8] = { 0,                      // 0
+int16_t Qepsk[8] =
+{
+                  0,          // 0
         Q_GAIN * 0.7071f,       // 45
         Q_GAIN,                 // 90
         Q_GAIN * 0.7071f,       // 135
@@ -208,9 +215,9 @@ void ISR()
         int16_t symbolI = 0;
         int16_t symbolQ = 0;
 
-        if (filter)  // filtered path
+        if (filter)  //for filtering,
         {
-            if ((count % 4) == 0)  // new symbol every 4 samples
+            if ((count % 4) == 0)  //Ensure there are 3 zeros between each convolution
             {
                 if (txByteIndex >= txLength)
                     txByteIndex = 0;
@@ -228,7 +235,7 @@ void ISR()
                     txByteIndex++;
                 }
             }
-            else
+            else //send a zero between bits
             {
                 symbolI = 0;
                 symbolQ = 0;
@@ -237,11 +244,11 @@ void ISR()
             convolve(symbolI, symbolQ);
             count++;
         }
-        else  // rectangular / unfiltered
+        else //non filtering
         {
-            if (sampleTick == 0)
+            if (sampleTick == 0) //Sample rate div
             {
-                if (txByteIndex >= txLength)
+                if (txByteIndex >= txLength) //wrap
                     txByteIndex = 0;
 
                 uint8_t currentByte = txBuffer[txByteIndex];
@@ -275,7 +282,7 @@ void ISR()
 
         if (filter)
         {
-            if ((count % 4) == 0)  // new symbol every 4 samples
+            if ((count % 4) == 0)
             {
                 if (txByteIndex >= txLength)
                     txByteIndex = 0;
