@@ -102,6 +102,7 @@ void writeSpi1Data(uint32_t data)
 {
     SSI1_DR_R = data;
     while (SSI1_SR_R & SSI_SR_BSY);
+
 }
 
 // Reads data from the rx buffer after a write

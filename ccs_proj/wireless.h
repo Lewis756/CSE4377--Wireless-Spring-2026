@@ -28,4 +28,5 @@ uint16_t voltageToDacCode(float v);
 void setSymbolRate(uint32_t rate);
 //void setFilterStatus();
 void setFilterStatus(void);
+
 #endif /* WIRELESS_H_ */
