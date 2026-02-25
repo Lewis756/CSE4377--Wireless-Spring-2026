@@ -98,13 +98,6 @@ bool filter;
 void setFilterStatus()
 {
     filter ^= 1;
-//    if(filter == 1)
-//    {
-//        NVIC_ST_CTRL_R = 0; //off
-//        NVIC_ST_RELOAD_R = 199; // 800/4 -1 = 199
-//        NVIC_ST_CURRENT_R = 0; //current value is 0
-//        NVIC_ST_CTRL_R |= NVIC_ST_CTRL_ENABLE | NVIC_ST_CTRL_INTEN | NVIC_ST_CTRL_CLK_SRC;
-//    }
 }
 
 void writeDacAB(uint16_t rawI, uint16_t rawQ)
@@ -544,3 +537,4 @@ void sendDacQ(float v)
     uint16_t data = (dacCode & 0x0FFF) | 0xB000;
     writeSpi1Data(data);
 }
+5
