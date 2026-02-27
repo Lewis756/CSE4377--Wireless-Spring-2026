@@ -100,15 +100,31 @@ void setFilterStatus()
     filter ^= 1;
 }
 
+uint16_t clipping = 155;
+uint16_t neg_clipping = 4095;
+
 void writeDacAB(uint16_t rawI, uint16_t rawQ)
 {
-    //preserve 16 bit and and clear to write to correct channel
-    uint16_t spitransferA = ((rawI & 0x0FFF) | 0x3000); //configured to A
-    uint16_t spitransferB = ((rawQ & 0x0fff) | 0xB000); //configured to B
-    // send to both now
+    // Because circuit is inverted:
+    // smaller DAC code = more positive voltage
+    // larger DAC code = more negative voltage
+
+    if (rawI < clipping)        // too positive
+        rawI = clipping;
+    else if (rawI > neg_clipping) // too negative
+        rawI = neg_clipping;
+
+    if (rawQ < clipping)
+        rawQ = clipping;
+    else if (rawQ > neg_clipping)
+        rawQ = neg_clipping;
+
+    uint16_t spitransferA = ((rawI & 0x0FFF) | 0x3000);
+    uint16_t spitransferB = ((rawQ & 0x0FFF) | 0xB000);
+
     writeSpi1Data(spitransferA);
     writeSpi1Data(spitransferB);
-    //latch them
+
     ldac_off();
     ldac_on();
 }
@@ -500,16 +516,22 @@ float clip_lvl = 0.5f;
 
 void set_clip(int mV)
 {
-    clip_lvl = mV/1000;
-}
+    clip_lvl = (float)mV / 1000.0f;
 
-float clip(float val, float lim)
-{
-    if(val > lim) //if above clip, return clip
-        return lim;
-    if(val < -lim) //if below clip, return clip
-        return -lim;
-    return val; //chillin if between
+    uint16_t pos_code = voltageToDacCode( clip_lvl);   // smaller DAC number
+    uint16_t neg_code = voltageToDacCode(-clip_lvl);   // larger DAC number
+
+    // Ensure correct ordering
+    if (pos_code < neg_code)
+    {
+        clipping = pos_code;      // upper voltage bound (positive)
+        neg_clipping = neg_code;  // lower voltage bound (negative)
+    }
+    else
+    {
+        clipping = neg_code;
+        neg_clipping = pos_code;
+    }
 }
 
 void sine_values() //table
@@ -520,7 +542,6 @@ void sine_values() //table
     {
         float angle = (2 * PI * i) / SAMPLE_SINE_WAVE;
         float wave_voltage = amplitude * sin(angle);
-        wave_voltage = clip(wave_voltage, clip_lvl);
         sineDacTable[i] = voltageToDacCode(wave_voltage);
     }
 }

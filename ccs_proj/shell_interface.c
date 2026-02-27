@@ -179,7 +179,7 @@ void shell(void)
 
             int32_t value = getFieldInteger(&data, 1);
 
-            set_clip(value);
+            set_clip(value); //SET CLIP
             putsUart0("\r\n CLIP LEVEL SET \r\n");
             mode = sine;
         }
