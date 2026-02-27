@@ -92,7 +92,7 @@ void ldac_off()
 
 uint32_t phaseSine = 0;
 uint32_t phaseCosine = 0;
-
+uint32_t theta = 0;
 bool filter;
 
 void setFilterStatus()
@@ -493,58 +493,55 @@ uint16_t voltageToDacCode(float v)
     //2125 -3940*.300 gives 94s  so output is .3v DC\return value below
     return (uint16_t) roundf(dacCode);
 }
-//10khz full sine cycle below
-// think of it as fancy array list of DAC codes
+
+
+
+float clip_lvl = 0.5f;
+
+void set_clip(int mV)
+{
+    clip_lvl = mV/1000;
+}
+
+float clip(float val, float lim)
+{
+    if(val > lim) //if above clip, return clip
+        return lim;
+    if(val < -lim) //if below clip, return clip
+        return -lim;
+    return val; //chillin if between
+}
+
 void sine_values() //table
 { //amplitude .5 to .5
     float amplitude = 0.5f;
     uint16_t i = 0;
     for (i = 0; i < SAMPLE_SINE_WAVE; i++)
-    { // i = 0 to i =4095
-      //sine periodic complete wave at 2Pi and divide evenly into 4095
-      //i chooses what angle a small slice
+    {
         float angle = (2 * PI * i) / SAMPLE_SINE_WAVE;
-        //A*SIN(angle) shrinkwwave .5 to -.5
         float wave_voltage = amplitude * sin(angle);
-        //send voltage to go iunto made a dac value
+        wave_voltage = clip(wave_voltage, clip_lvl);
         sineDacTable[i] = voltageToDacCode(wave_voltage);
     }
 }
 
 float mvToV(int16_t millivolts)
 {
-    //from uart interface
     float volts = 0.0f;
-    //divide by 10^3 to get decimals
     volts = (float) millivolts / 1000.0f;
-    //return volts after calculation
     return volts;
 }
 
 void sendDacI(float v)
 {
-    // uint16_t data = 0;
-    //uint16_t voltage = 0;
-    //insert equation here
-    //voltage = 2125 + -3940 * v; //(raw + slope * v)
-
     uint16_t dacCode = voltageToDacCode(v);
-    // data |= voltage | 0x3000; //0011 A
     uint16_t data = (dacCode & 0x0FFF) | 0x3000;
     writeSpi1Data(data);
 }
 
 void sendDacQ(float v)
 {
-    // uint16_t data = 0;
-    //uint16_t voltage = 0;
-    //insert equation here
-    //voltage = rawQ; //(raw + slope * v)
-    //we can fix now and use voltage ?? not raw
-    //voltage = 2125 + -3940 * v; // no more raw?!
-
     uint16_t dacCode = voltageToDacCode(v);
-    // data |= voltage | 0xB000; //1011 B
     uint16_t data = (dacCode & 0x0FFF) | 0xB000;
     writeSpi1Data(data);
 }

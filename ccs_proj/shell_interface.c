@@ -15,7 +15,6 @@
 extern uint32_t delta_phase;
 extern uint16_t bpskSymbol;
 extern uint16_t ReadConstellation;
-
 uint8_t input[256];
 
 void shell(void)
@@ -172,6 +171,17 @@ void shell(void)
             valid = true;
 
             setFilterStatus();
+        }
+
+        if (isCommand(&data, "CLIP", 2))
+        {
+            valid = true;
+
+            int32_t value = getFieldInteger(&data, 1);
+
+            set_clip(value);
+            putsUart0("\r\n CLIP LEVEL SET \r\n");
+            mode = sine;
         }
 
         if (!valid)

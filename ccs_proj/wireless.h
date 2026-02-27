@@ -28,5 +28,6 @@ uint16_t voltageToDacCode(float v);
 void setSymbolRate(uint32_t rate);
 void setFilterStatus(void);
 void convolve(int16_t Iup, int16_t Qup); //convolution from signals
+void set_clip(int mV);
 
 #endif /* WIRELESS_H_ */
